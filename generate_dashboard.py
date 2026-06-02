@@ -203,7 +203,7 @@ json_str = json.dumps(payload).replace('</script>', '<\\/script>')
 data_js = f"const P={json_str};"
 # Replace the data block
 import re
-new_html = re.sub(r'<script>const P=\{.*?\};</script>',
+new_html = re.sub(r'<script>const P=\{.*?\};</script>', lambda m: f'<script>{data_js}</script>', template, flags=re.DOTALL)
                   f'<script>{data_js}</script>',
                   template, flags=re.DOTALL)
 
