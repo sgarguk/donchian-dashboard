@@ -199,7 +199,8 @@ payload={'variants':variant_data,'shared':shared}
 with open('dashboard_template.html','r') as f:
     template = f.read()
 
-data_js = f"const P={json.dumps(payload).replace('</script>','<\\/script>')};"
+json_str = json.dumps(payload).replace('</script>', '<\\/script>')
+data_js = f"const P={json_str};"
 # Replace the data block
 import re
 new_html = re.sub(r'<script>const P=\{.*?\};</script>',
