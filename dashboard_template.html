@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LC · Dual Donchian · Interactive Signal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--nv:#1C2B3A;--nv2:#243446;--rd:#C0392B;--bg:#F0F4F8;--bd:#DDE3EA;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--nv);font-size:13px;}
+.mn{font-family:'Courier New',monospace;font-size:11px;}
+/* Header */
+.hdr{background:var(--nv);height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:3px solid var(--rd);}
+.hl{display:flex;align-items:center;gap:14px;}
+.lc{font-family:'Courier New',monospace;font-size:11px;font-weight:700;color:var(--rd);border:1px solid var(--rd);padding:3px 8px;border-radius:2px;letter-spacing:2px;}
+.ht{color:#fff;font-size:14px;font-weight:600;}.hs{color:#94a3b8;font-size:10px;font-family:'Courier New',monospace;margin-top:2px;}
+.hr{text-align:right;color:#94a3b8;font-size:11px;font-family:'Courier New',monospace;}
+/* Variant selector */
+.vselector{background:var(--nv2);padding:10px 24px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #2C3E50;}
+.vsel-label{color:#94a3b8;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-right:4px;white-space:nowrap;}
+.vtab{padding:7px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;
+       border:2px solid transparent;transition:all 0.15s;color:#94a3b8;background:transparent;}
+.vtab:hover{background:rgba(255,255,255,0.08);}
+.vtab.active{color:#fff;border-color:currentColor;background:rgba(255,255,255,0.08);}
+.vtab .badge{display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;
+              background:rgba(255,255,255,0.15);margin-left:5px;font-weight:700;}
+.vdesc{margin-left:auto;color:#64748b;font-size:10px;font-family:'Courier New',monospace;}
+/* Layout */
+.page{max-width:1440px;margin:0 auto;padding:16px 22px;}
+.card{background:#fff;border:1px solid var(--bd);border-radius:6px;overflow:hidden;}
+.ch{background:var(--nv2);padding:7px 13px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;display:flex;align-items:center;justify-content:space-between;}
+.cb{padding:13px;}
+.g1{display:grid;grid-template-columns:300px 1fr 205px;gap:13px;margin-bottom:13px;}
+.g2{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:13px;}
+.g3{display:grid;grid-template-columns:1fr 390px;gap:13px;margin-bottom:13px;}
+/* Signal card */
+.sig-card{border-top:4px solid var(--vc,#2E86AB);transition:border-color 0.2s;}
+.sa{font-size:40px;font-weight:700;font-family:'Courier New',monospace;line-height:1;transition:color 0.2s;}
+.sn{font-size:11px;color:#64748b;margin:3px 0 11px;}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.mi{background:var(--bg);border-radius:4px;padding:6px 8px;}
+.ml{font-size:8px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px;}
+.mv{font-size:13px;font-weight:700;font-family:'Courier New',monospace;}
+.pr{display:flex;gap:6px;margin-top:8px;}
+.pc{flex:1;border-radius:4px;padding:5px;text-align:center;border:1px solid var(--bd);min-width:0;}
+.pt{font-size:8px;font-weight:700;letter-spacing:1px;}
+.pv{font-size:12px;font-weight:600;font-family:'Courier New',monospace;}
+/* Pairwise */
+.shdr{display:grid;grid-template-columns:80px 1fr 1fr 1fr 90px 72px;gap:5px;padding:0 0 5px;border-bottom:2px solid var(--nv);margin-bottom:3px;}
+.sr{display:grid;grid-template-columns:80px 1fr 1fr 1fr 90px 72px;gap:5px;align-items:center;padding:5px 0;border-bottom:1px solid var(--bd);}
+.sr:last-child{border-bottom:none;}
+.sl{font-size:10px;font-weight:700;font-family:'Courier New',monospace;color:#475569;}
+.sv{font-family:'Courier New',monospace;font-size:11px;font-weight:600;text-align:center;line-height:1.3;}
+.sm{font-size:8px;color:#7F8C8D;}
+.sb{display:flex;flex-direction:column;align-items:center;gap:1px;}
+.bv{font-family:'Courier New',monospace;font-size:11px;font-weight:600;}
+.bv.g{color:#1E8449;}.bv.r{color:#922B21;}
+.bl{font-size:8px;color:#7F8C8D;text-transform:uppercase;}
+.ss{font-size:9px;font-weight:700;padding:3px 5px;border-radius:3px;text-align:center;}
+.status-above{background:#D5F5E3;color:#1E8449;}.status-below{background:#FADBD8;color:#922B21;}.status-within{background:#EBF5FB;color:#1A5276;}
+.col-h{font-size:8px;font-weight:700;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;text-align:center;}
+/* Perf */
+.pg{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.pi{border-radius:4px;padding:7px 8px;background:var(--bg);}
+.pl{font-size:9px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px;}
+.pv2{font-size:15px;font-weight:700;font-family:'Courier New',monospace;}
+.ps{font-size:9px;color:#7F8C8D;margin-top:1px;}
+/* Regime bar */
+.rbar{height:22px;border-radius:3px;overflow:hidden;display:flex;margin:6px 0;}
+.rs{height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:rgba(255,255,255,0.9);white-space:nowrap;overflow:hidden;}
+.rleg{display:flex;gap:9px;flex-wrap:wrap;}.ri{display:flex;align-items:center;gap:4px;font-size:10px;color:#475569;}.rd{width:10px;height:10px;border-radius:2px;}
+/* YTD cards */
+.ytd-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+.ytd-c{border-radius:4px;padding:8px 9px;border:1px solid var(--bd);}
+.ytd-l{font-size:8px;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;}
+.ytd-v{font-size:19px;font-weight:700;font-family:'Courier New',monospace;}
+.ytd-s{font-size:9px;margin-top:2px;}
+/* Switch tables */
+.sw-wrap{max-height:320px;overflow-y:auto;}
+.sw-t{width:100%;border-collapse:collapse;font-size:11px;}
+.sw-t th{background:var(--nv2);color:#94a3b8;padding:6px 7px;text-align:left;font-size:9px;letter-spacing:0.8px;text-transform:uppercase;font-weight:600;position:sticky;top:0;z-index:1;}
+.sw-t td{padding:5px 7px;border-bottom:1px solid var(--bd);vertical-align:middle;}
+.sw-t tr:last-child td{border-bottom:none;}.sw-t tr:hover td{background:var(--bg);}
+.badge{display:inline-block;padding:2px 6px;border-radius:3px;font-family:'Courier New',monospace;font-size:10px;font-weight:700;}
+.bSPY,.bQQQ{background:#D6EAF8;color:#1A5276;}.bQLD{background:#EEE0F5;color:#6C3483;}
+.bTQQQ{background:#FADBD8;color:#922B21;}.bGLD{background:#FEF9E7;color:#9A7D0A;}
+.bDBMF{background:#D5F5E3;color:#1D6A39;}
+.arr{color:#7F8C8D;margin:0 3px;font-size:10px;}
+.tag{font-family:'Courier New',monospace;font-size:9px;color:#374151;background:var(--bg);padding:1px 5px;border-radius:2px;border:1px solid var(--bd);}
+.tie-tag{font-family:'Courier New',monospace;font-size:8px;color:#8E44AD;background:#F5EEF8;padding:1px 4px;border-radius:2px;border:1px solid #D2B4DE;margin-left:3px;}
+/* Annual returns mini-table */
+.ann-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px;}
+.ann-yr{border-radius:4px;padding:6px 7px;text-align:center;}
+.ann-y{font-size:8px;color:#7F8C8D;margin-bottom:2px;}
+.ann-v{font-size:13px;font-weight:700;font-family:'Courier New',monospace;}
+canvas{max-width:100%;}
+.footer{text-align:center;padding:10px;font-size:10px;color:#7F8C8D;border-top:1px solid var(--bd);font-family:'Courier New',monospace;}
+/* Leverage indicator */
+.lev-pill{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+</style>
+</head>
+<body>
+<script>const P={};</script>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hl"><span class="lc">LC</span>
+    <div><div class="ht">SPY / [QQQ Variant] / GLD / DBMF &nbsp;·&nbsp; Dual Donchian Rotation &nbsp;·&nbsp; Interactive Signal</div>
+    <div class="hs">N=30 · 2-day confirm · next-day close · H2H tiebreaker · 3bp one-way · Internal use only</div></div></div>
+  <div class="hr">As of <strong style="color:#fff">01 Jun 2026</strong><br>May 2019 – Jun 2026</div>
+</div>
+
+<!-- VARIANT SELECTOR -->
+<div class="vselector">
+  <span class="vsel-label">QQQ Leg:</span>
+  <button class="vtab active" data-vkey="base"  onclick="setVariant('base')"  style="--vc:#2E86AB;color:#94a3b8">Base QQQ <span class="badge">1×</span></button>
+  <button class="vtab"        data-vkey="qld"   onclick="setVariant('qld')"   style="--vc:#8E44AD;color:#94a3b8">QLD <span class="badge">2×</span></button>
+  <button class="vtab"        data-vkey="tqqq"  onclick="setVariant('tqqq')"  style="--vc:#C0392B;color:#94a3b8">TQQQ <span class="badge">3×</span></button>
+  <button class="vtab"        data-vkey="blend" onclick="setVariant('blend')" style="--vc:#E67E22;color:#94a3b8">Blend ⅓ each <span class="badge">~2×</span></button>
+  <span class="vdesc">Signal unchanged · only QQQ execution leg varies</span>
+</div>
+
+<div class="page">
+<div class="g1">
+
+  <!-- SIGNAL CARD -->
+  <div class="card sig-card" id="sigCard">
+    <div class="ch"><span>Active Holding</span><span id="liveBadge" style="font-size:11px">▶ LIVE</span></div>
+    <div class="cb">
+      <div class="sa" id="currHold">—</div>
+      <div class="sn" id="currName">—</div>
+      <div class="mg">
+        <div class="mi"><div class="ml">Days In</div><div class="mv" id="daysIn">—</div></div>
+        <div class="mi"><div class="ml">Since</div><div class="mv" style="font-size:11px" id="sinceDate">—</div></div>
+        <div class="mi"><div class="ml">Previous</div><div class="mv" style="font-size:13px" id="prevHold">—</div></div>
+        <div class="mi"><div class="ml">Switches</div><div class="mv" id="nSwitches">—</div></div>
+      </div>
+      <div class="pr"><div class="pc" style="background:#EBF5FB;border-color:#2E86AB33">
+          <div class="pt" style="color:#1A5276">SPY</div>
+          <div class="pv" style="color:#1A5276">$758.54</div>
+        </div><div class="pc" style="background:#F5EEF8;border-color:#8E44AD33">
+          <div class="pt" style="color:#6C3483">QLD</div>
+          <div class="pv" style="color:#6C3483">$99.63</div>
+        </div><div class="pc" style="background:#FADBD8;border-color:#C0392B33">
+          <div class="pt" style="color:#922B21">TQQQ</div>
+          <div class="pv" style="color:#922B21">$86.04</div>
+        </div><div class="pc" style="background:#FEF9E7;border-color:#D4A84B33">
+          <div class="pt" style="color:#7D6608">GLD</div>
+          <div class="pv" style="color:#7D6608">$411.26</div>
+        </div><div class="pc" style="background:#D5F5E3;border-color:#27AE6033">
+          <div class="pt" style="color:#1D6A39">DBMF</div>
+          <div class="pv" style="color:#1D6A39">$31.29</div>
+        </div></div>
+      <div id="leverageNote" style="margin-top:8px;padding:6px 8px;border-radius:4px;font-size:9px;color:#475569;background:var(--bg);border:1px solid var(--bd);display:none"></div>
+    </div>
+  </div>
+
+  <!-- PAIRWISE SIGNALS (same for all variants) -->
+  <div class="card">
+    <div class="ch"><span>Pairwise Donchian Signal State</span><span>N=30 · shift(1) · unchanged across variants</span></div>
+    <div class="cb">
+      <div class="shdr"><div class="col-h">Ratio</div><div class="col-h">Current</div>
+        <div class="col-h">Upper</div><div class="col-h">Lower</div><div class="col-h">Status / Direction</div><div class="col-h">Vote</div></div>
+      <div class="sr"><div class="sl">SPY/QQQ</div><div class="sv">1.0213<br><span class="sm">-5% of range</span></div><div class="sb"><span class="bv g">1.0957</span><span class="bl">upper</span></div><div class="sb"><span class="bv r">1.0246</span><span class="bl">lower</span></div><div class="ss status-below">▼ BELOW<br><span style="font-size:7px;opacity:0.85">▼ last down</span></div><div class="sv" style="font-weight:700;color:#2E86AB">+1 QQQ<br><span class="sm" style="color:#2E86AB">vote</span></div></div><div class="sr"><div class="sl">SPY/GLD</div><div class="sv">1.8444<br><span class="sm">103% of range</span></div><div class="sb"><span class="bv g">1.8372</span><span class="bl">upper</span></div><div class="sb"><span class="bv r">1.5925</span><span class="bl">lower</span></div><div class="ss status-above">▲ ABOVE<br><span style="font-size:7px;opacity:0.85">▲ last up</span></div><div class="sv" style="font-weight:700;color:#2E86AB">+1 SPY<br><span class="sm" style="color:#2E86AB">vote</span></div></div><div class="sr"><div class="sl">SPY/DBMF</div><div class="sv">24.2422<br><span class="sm">90% of range</span></div><div class="sb"><span class="bv g">24.4026</span><span class="bl">upper</span></div><div class="sb"><span class="bv r">22.8657</span><span class="bl">lower</span></div><div class="ss status-within">IN BAND<br><span style="font-size:7px;opacity:0.85">▲ last up</span></div><div class="sv" style="font-weight:700;color:#2E86AB">+1 SPY<br><span class="sm" style="color:#2E86AB">vote</span></div></div><div class="sr"><div class="sl">QQQ/GLD</div><div class="sv">1.8060<br><span class="sm">106% of range</span></div><div class="sb"><span class="bv g">1.7857</span><span class="bl">upper</span></div><div class="sb"><span class="bv r">1.4550</span><span class="bl">lower</span></div><div class="ss status-above">▲ ABOVE<br><span style="font-size:7px;opacity:0.85">▲ last up</span></div><div class="sv" style="font-weight:700;color:#2E86AB">+1 QQQ<br><span class="sm" style="color:#2E86AB">vote</span></div></div><div class="sr"><div class="sl">QQQ/DBMF</div><div class="sv">23.7373<br><span class="sm">97% of range</span></div><div class="sb"><span class="bv g">23.8165</span><span class="bl">upper</span></div><div class="sb"><span class="bv r">21.2440</span><span class="bl">lower</span></div><div class="ss status-within">IN BAND<br><span style="font-size:7px;opacity:0.85">▲ last up</span></div><div class="sv" style="font-weight:700;color:#2E86AB">+1 QQQ<br><span class="sm" style="color:#2E86AB">vote</span></div></div><div class="sr"><div class="sl">GLD/DBMF</div><div class="sv">13.1435<br><span class="sm">0% of range</span></div><div class="sb"><span class="bv g">14.8792</span><span class="bl">upper</span></div><div class="sb"><span class="bv r">13.1386</span><span class="bl">lower</span></div><div class="ss status-within">IN BAND<br><span style="font-size:7px;opacity:0.85">▼ last down</span></div><div class="sv" style="font-weight:700;color:#27AE60">+1 DBMF<br><span class="sm" style="color:#27AE60">vote</span></div></div>
+      <div id="signalLogic" style="margin-top:8px;padding:7px 8px;background:var(--bg);border-radius:4px;font-size:10px;color:#475569;line-height:1.7"></div><div style="margin-top:10px;border-top:1px solid var(--bd);padding-top:9px"><div style="font-size:9px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Vote Tally &nbsp;&middot;&nbsp; <span style="color:#1C2B3A;font-style:normal;text-transform:none">max 3 per asset &middot; signal latches at last breakout</span></div><div style="display:flex;gap:6px"><div style="flex:1;text-align:center;padding:6px 4px;border-radius:4px;background:#F7F9FC;border:1.5px solid #DDE3EA;"><div style="font-size:8px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px">SPY</div><div style="font-size:20px;font-weight:700;font-family:Courier New,monospace;color:#94a3b8">2</div><div style="font-size:9px;color:#94a3b8;margin-top:1px">★★</div></div><div style="flex:1;text-align:center;padding:6px 4px;border-radius:4px;background:rgba(46,134,171,0.12);border:1.5px solid #2E86AB;"><div style="font-size:8px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px">QQQ</div><div style="font-size:20px;font-weight:700;font-family:Courier New,monospace;color:#2E86AB">3</div><div style="font-size:9px;color:#2E86AB;margin-top:1px">★★★</div></div><div style="flex:1;text-align:center;padding:6px 4px;border-radius:4px;background:#F7F9FC;border:1.5px solid #DDE3EA;"><div style="font-size:8px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px">GLD</div><div style="font-size:20px;font-weight:700;font-family:Courier New,monospace;color:#94a3b8">0</div><div style="font-size:9px;color:#94a3b8;margin-top:1px">·</div></div><div style="flex:1;text-align:center;padding:6px 4px;border-radius:4px;background:#F7F9FC;border:1.5px solid #DDE3EA;"><div style="font-size:8px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px">DBMF</div><div style="font-size:20px;font-weight:700;font-family:Courier New,monospace;color:#94a3b8">1</div><div style="font-size:9px;color:#94a3b8;margin-top:1px">★</div></div></div><div style="margin-top:7px;font-size:9px;color:#475569;padding:5px 7px;background:var(--bg);border-radius:4px;">Winner: <strong style="color:#2E86AB">QQQ (3 votes)</strong> &nbsp;&middot;&nbsp; "In band" ratios still vote &mdash; they carry the <em>last confirmed breakout direction</em> until a new breakout in the opposite direction negates it.</div></div>
+    </div>
+  </div>
+
+  <!-- PERFORMANCE -->
+  <div class="card">
+    <div class="ch"><span id="perfTitle">Performance</span></div>
+    <div class="cb">
+      <div style="font-size:9px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:7px">Since May 2019</div>
+      <div class="pg" id="perfGrid"></div>
+      <div style="margin-top:9px;border-top:1px solid var(--bd);padding-top:9px">
+        <div style="font-size:9px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:7px">Total Returns · not annualised</div>
+        <div class="ytd-grid" id="ytdCards"></div>
+      </div>
+      <div style="margin-top:9px;border-top:1px solid var(--bd);padding-top:7px">
+        <div style="font-size:9px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px">Regime Allocation</div>
+        <div class="rbar" id="regimeBar"></div>
+        <div class="rleg" id="regimeLeg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- YTD EQUITY -->
+<div class="card" style="margin-bottom:13px">
+  <div class="ch"><span id="eqTitle">YTD Performance · 2025–26</span><span>Rebased 100 · Net 3bp · Background = active regime</span></div>
+  <div class="cb">
+    <div class="rbar" id="ytdRegimeBar"></div>
+    <div style="height:200px;position:relative"><canvas id="eqChart"></canvas></div>
+    <div style="display:flex;gap:16px;margin-top:7px;font-size:10px;color:#475569" id="eqLegend"></div>
+  </div>
+</div>
+
+<!-- RATIO CHARTS — all 6 pairwise -->
+<div class="g2" style="margin-bottom:0">
+  <div class="card"><div class="ch"><span>SPY / QQQ</span><span>N=30 Donchian</span></div>
+    <div class="cb" style="padding:10px"><div style="height:140px;position:relative"><canvas id="rc0"></canvas></div></div></div>
+  <div class="card"><div class="ch"><span>SPY / GLD</span><span>N=30 Donchian</span></div>
+    <div class="cb" style="padding:10px"><div style="height:140px;position:relative"><canvas id="rc1"></canvas></div></div></div>
+  <div class="card"><div class="ch"><span>SPY / DBMF</span><span>N=30 Donchian</span></div>
+    <div class="cb" style="padding:10px"><div style="height:140px;position:relative"><canvas id="rc2"></canvas></div></div></div>
+</div>
+<div class="g2" style="margin-top:13px">
+  <div class="card"><div class="ch"><span>QQQ / GLD</span><span>N=30 Donchian</span></div>
+    <div class="cb" style="padding:10px"><div style="height:140px;position:relative"><canvas id="rc3"></canvas></div></div></div>
+  <div class="card"><div class="ch"><span>QQQ / DBMF</span><span>N=30 Donchian</span></div>
+    <div class="cb" style="padding:10px"><div style="height:140px;position:relative"><canvas id="rc4"></canvas></div></div></div>
+  <div class="card"><div class="ch"><span>GLD / DBMF</span><span>N=30 Donchian</span></div>
+    <div class="cb" style="padding:10px"><div style="height:140px;position:relative"><canvas id="rc5"></canvas></div></div></div>
+</div>
+
+<!-- ANNUAL RETURNS + SWITCH LOG -->
+<div class="g3">
+  <div class="g3" style="display:block">
+    <div class="card" style="margin-bottom:13px">
+      <div class="ch"><span id="annTitle">Annual Returns</span><span id="annSub">vs SPY & QQQ</span></div>
+      <div class="cb" style="padding:10px">
+        <div style="height:160px;position:relative"><canvas id="annChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><span>YTD Switch Log · 2025–26</span><span><span class="tie-tag">H2H</span> = tiebreaker used</span></div>
+      <div class="cb" style="padding:0"><div class="sw-wrap"><table class="sw-t">
+        <thead><tr><th>Date</th><th>From → To</th><th>Trigger</th><th>Days</th></tr></thead>
+        <tbody id="ytdSwBody"></tbody>
+      </table></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span>All-Time Switch Log (last 30)</span></div>
+    <div class="cb" style="padding:0"><div class="sw-wrap"><table class="sw-t">
+      <thead><tr><th>#</th><th>Date</th><th>From → To</th><th>Trigger</th><th>Days</th></tr></thead>
+      <tbody id="allSwBody"></tbody>
+    </table></div></div>
+  </div>
+</div>
+</div>
+
+<div class="footer">Lighthouse Canton Pte. Ltd. · Internal Research Only · Not for Client Distribution · N=30 · 2-day confirm · next-day close (shift=2) · H2H tiebreaker · 3bp one-way cost · Leveraged ETFs amplify gains and losses</div>
+
+<script>
+// ── Colour maps ──────────────────────────────────────────────────────────────
+const ACOL = {SPY:'#2E86AB',QQQ:'#2E86AB',GLD:'#D4A84B',DBMF:'#27AE60',QLD:'#8E44AD',TQQQ:'#C0392B'};
+const ABG  = {SPY:'rgba(46,134,171,0.09)',QQQ:'rgba(46,134,171,0.09)',GLD:'rgba(212,168,75,0.11)',
+               DBMF:'rgba(39,174,96,0.10)',QLD:'rgba(142,68,173,0.10)',TQQQ:'rgba(192,57,43,0.10)'};
+const NAMES= {SPY:'SPDR S&P 500',QQQ:'Nasdaq-100',GLD:'Gold',DBMF:'Managed Futures',
+               QLD:'QQQ 2× (QLD)',TQQQ:'QQQ 3× (TQQQ)'};
+
+// ── Chart instances ──────────────────────────────────────────────────────────
+let eqChartInst=null, annChartInst=null;
+const ratioCharts=[null,null,null];
+
+// ── Regime background plugin ─────────────────────────────────────────────────
+function bgPlugin(blocks){
+  return {id:'bg',beforeDatasetsDraw(chart){
+    const{ctx,scales,chartArea}=chart;if(!scales.x||!chartArea)return;ctx.save();
+    blocks.forEach(b=>{const labs=chart.data.labels;let x1=chartArea.left,x2=chartArea.right;
+      for(let i=0;i<labs.length;i++)if(labs[i]>=b.start){x1=scales.x.getPixelForValue(i);break;}
+      for(let i=0;i<labs.length;i++)if(labs[i]>=b.end){x2=scales.x.getPixelForValue(i);break;}
+      ctx.fillStyle=ABG[b.asset]||'rgba(0,0,0,0.03)';ctx.fillRect(x1,chartArea.top,x2-x1,chartArea.height);
+    });ctx.restore();
+  }};
+}
+
+function unzip(a){return{labels:a.map(r=>r[0]),vals:a.map(r=>r[1])};}
+
+// ── Variant selector ─────────────────────────────────────────────────────────
+let currentVariant = 'base';
+
+function setVariant(vkey){
+  currentVariant = vkey;
+  const v = P.variants[vkey];
+  const vc = v.color;
+
+  // Tabs
+  document.querySelectorAll('.vtab').forEach(t=>{
+    const active = t.dataset.vkey===vkey;
+    t.classList.toggle('active',active);
+    t.style.color = active ? '#fff' : '#94a3b8';
+    if(active) t.style.borderColor = vc;
+    else t.style.borderColor = 'transparent';
+  });
+
+  // Signal card
+  document.getElementById('sigCard').style.borderTopColor=vc;
+  document.getElementById('liveBadge').style.color=vc;
+  const ca=v.curr_active;
+  document.getElementById('currHold').textContent=ca;
+  document.getElementById('currHold').style.color=ACOL[ca]||vc;
+  document.getElementById('currName').textContent=NAMES[ca]||ca;
+  document.getElementById('daysIn').textContent=v.days_in;
+  document.getElementById('daysIn').style.color=vc;
+  document.getElementById('sinceDate').textContent=v.last_sw_date;
+  // previous
+  const prevSw=v.sw_log.length>0?v.sw_log[v.sw_log.length-1]:null;
+  document.getElementById('prevHold').textContent=prevSw?prevSw.from_:'—';
+  document.getElementById('nSwitches').textContent=v.n_switches;
+
+  // Leverage note
+  const levNote=document.getElementById('leverageNote');
+  if(vkey==='base'){levNote.style.display='none';}
+  else{
+    const instrStr = v.instruments.join(' + ');
+    const notes={qld:'QLD = 2× daily Nasdaq-100. Higher CAGR vs base; drawdown roughly doubles.',
+                  tqqq:'TQQQ = 3× daily Nasdaq-100. Significant vol-decay (~8%/yr). Use only in strong confirmed trends.',
+                  blend:'Blend: ⅓ QQQ + ⅓ QLD + ⅓ TQQQ ≈ 2× average. Comparable to QLD with smoother daily tracking.'};
+    levNote.style.display='block';
+    levNote.style.borderColor=vc+'44';
+    levNote.innerHTML='<strong style="color:'+vc+'">⚡ '+v.label+':</strong> '+notes[vkey];
+  }
+
+  // Signal logic
+  const sigKey = P.shared.curr_ratios;
+  const sgv=sigKey['SPY/QQQ']?.sig===1?'LONG SPY':'LONG QQQ';
+  const sdv=sigKey['SPY/DBMF']?.sig===1?'LONG SPY':'LONG DBMF';
+  const gdv=sigKey['GLD/DBMF']?.sig===1?'LONG GLD':'LONG DBMF';
+  const winner=v.signal_hold;
+  document.getElementById('signalLogic').innerHTML=
+    '<strong>Signal:</strong> SG: <strong style="color:'+(sigKey['SPY/QQQ']?.sig===1?'#1E8449':'#922B21')+'">'+sgv+'</strong>'
+    +' &nbsp;·&nbsp; SD: <strong style="color:'+(sigKey['SPY/DBMF']?.sig===1?'#1E8449':'#922B21')+'">'+sdv+'</strong>'
+    +' &nbsp;·&nbsp; GD: <strong style="color:'+(sigKey['GLD/DBMF']?.sig===1?'#1E8449':'#922B21')+'">'+gdv+'</strong>'
+    +' &nbsp;→&nbsp; <strong style="color:'+vc+'">Execute: '+v.curr_active+'</strong>';
+
+  // Performance grid
+  const m=v.perf; const ms=v.perf_spy;
+  const perf_items=[['CAGR',m.cagr.toFixed(1)+'%',ms.cagr.toFixed(1)+'%',m.cagr>=ms.cagr],
+                    ['Sharpe',m.sharpe.toFixed(2),ms.sharpe.toFixed(2),m.sharpe>=ms.sharpe],
+                    ['Max DD',m.mdd.toFixed(1)+'%',ms.mdd.toFixed(1)+'%',m.mdd>=ms.mdd],
+                    ['Calmar',m.calmar.toFixed(2),ms.calmar.toFixed(2),m.calmar>=ms.calmar]];
+  document.getElementById('perfGrid').innerHTML=perf_items.map(([l,v2,b,better])=>
+    `<div class="pi"><div class="pl">${l}</div>
+     <div class="pv2" style="color:${better?'#27AE60':'#C0392B'}">${v2}</div>
+     <div class="ps">vs SPY ${b}</div></div>`).join('');
+
+  // YTD cards
+  const ytd=[['2025 Full Year',v.ytd_2025,v.spy_ytd25,v.qqq_ytd25,'#D5F5E3','#1E8449','#27AE6033'],
+             ['2026 YTD',v.ytd_2026,v.spy_ytd26,v.qqq_ytd26,'#EBF5FB','#1A5276','#2E86AB33'],
+             ['Since Jan 2025',v.ytd_since,v.spy_since,null,'#F7F9FC','var(--nv)','var(--bd)']];
+  document.getElementById('ytdCards').innerHTML=ytd.map(([lbl,sv,spyv,qqqv,bg,fc,bc])=>
+    `<div class="ytd-c" style="background:${bg};border-color:${bc}">
+       <div class="ytd-l" style="color:${fc}">${lbl}</div>
+       <div class="ytd-v" style="color:${fc}">${sv>0?'+':''}${sv.toFixed(1)}%</div>
+       <div class="ytd-s" style="color:${fc}">SPY ${spyv>0?'+':''}${spyv.toFixed(1)}%${qqqv!==null?' &nbsp; QQQ '+(qqqv>0?'+':'')+qqqv.toFixed(1)+'%':''}</div>
+     </div>`).join('');
+
+  // Regime bar
+  buildRegimeBar('regimeBar', v.ytd_blocks);
+  buildRegimeLeg('regimeLeg', v.ytd_blocks);
+
+  // Equity chart
+  buildEqChart(v);
+
+  // Annual bar chart
+  buildAnnChart(v);
+
+  // YTD regime bar
+  buildRegimeBar('ytdRegimeBar', v.ytd_blocks);
+
+  // Equity legend
+  document.getElementById('eqLegend').innerHTML=
+    `<span><span style="display:inline-block;width:18px;height:3px;background:${vc};border-radius:2px;vertical-align:middle;margin-right:4px"></span>${v.label}</span>`+
+    `<span><span style="display:inline-block;width:18px;height:2px;background:#2E86AB;border-radius:2px;vertical-align:middle;margin-right:4px;opacity:.7"></span>SPY</span>`+
+    `<span><span style="display:inline-block;width:18px;height:2px;background:#2E86AB;border-radius:2px;vertical-align:middle;margin-right:4px;opacity:.4"></span>QQQ (unlevered ref)</span>`;
+
+  // Switch tables
+  buildSwTables(v);
+
+  // Titles
+  document.getElementById('perfTitle').textContent='Performance · '+v.label;
+  document.getElementById('eqTitle').textContent='YTD Performance · 2025–26 · '+v.label;
+  document.getElementById('annTitle').textContent='Annual Returns · '+v.label;
+}
+
+function buildRegimeBar(elId, blocks){
+  const el=document.getElementById(elId); if(!el)return; el.innerHTML='';
+  const tots=blocks.reduce((s,b)=>{try{return s+(new Date(b.end)-new Date(b.start))/86400000;}catch{return s+1;}
+  },0);
+  blocks.forEach(b=>{let d=1;try{d=(new Date(b.end)-new Date(b.start))/86400000;}catch{}
+    const seg=document.createElement('div'); seg.className='rs';
+    seg.style.width=(d/tots*100).toFixed(1)+'%'; seg.style.background=ACOL[b.asset]||'#999';
+    if(d/tots*100>7)seg.textContent=b.asset; el.appendChild(seg);});
+}
+
+function buildRegimeLeg(elId, blocks){
+  const el=document.getElementById(elId); if(!el)return; el.innerHTML='';
+  const seen=new Set();
+  blocks.forEach(b=>{if(!seen.has(b.asset)){seen.add(b.asset);
+    el.innerHTML+=`<div class="ri"><div class="rd" style="background:${ACOL[b.asset]}"></div>${b.asset}</div>`;
+  }});
+}
+
+function buildEqChart(v){
+  const eq=unzip(v.ytd_equity), sp=unzip(P.shared.ytd_spy_eq), qq=unzip(P.shared.ytd_qqq_eq);
+  if(eqChartInst){eqChartInst.destroy();}
+  eqChartInst=new Chart(document.getElementById('eqChart'),{
+    type:'line', plugins:[bgPlugin(v.ytd_blocks)],
+    data:{labels:eq.labels,datasets:[
+      {label:v.label,data:eq.vals,borderColor:v.color,borderWidth:2.2,pointRadius:0,tension:0.3,fill:false},
+      {label:'SPY',data:sp.vals,borderColor:'#2E86AB',borderWidth:1.4,borderDash:[5,4],pointRadius:0,tension:0.3,fill:false},
+      {label:'QQQ',data:qq.vals,borderColor:'#2E86AB',borderWidth:1.0,borderDash:[2,3],pointRadius:0,tension:0.3,fill:false,borderOpacity:0.5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+ctx.parsed.y.toFixed(2)}}},
+      scales:{x:{ticks:{maxTicksLimit:12,maxRotation:0,font:{size:9},color:'#7F8C8D'},grid:{color:'#F0F4F8'}},
+               y:{ticks:{callback:v=>v.toFixed(0),font:{size:9},color:'#7F8C8D'},grid:{color:'#EEF0F3'}}}
+    }
+  });
+}
+
+function buildAnnChart(v){
+  const years=Object.keys(v.annual).sort();
+  const strat=years.map(y=>v.annual[y]||0);
+  const spyAnn=years.map(y=>P.shared.spy_annual[y]||0);
+  const qqqAnn=years.map(y=>P.shared.qqq_annual[y]||0);
+  if(annChartInst){annChartInst.destroy();}
+  annChartInst=new Chart(document.getElementById('annChart'),{
+    type:'bar',
+    data:{labels:years,datasets:[
+      {label:v.label,data:strat,backgroundColor:strat.map(x=>x>=0?v.color+'CC':v.color+'66'),borderRadius:2},
+      {label:'SPY',data:spyAnn,backgroundColor:'rgba(46,134,171,0.35)',borderRadius:2},
+      {label:'QQQ',data:qqqAnn,backgroundColor:'rgba(46,134,171,0.15)',borderRadius:2}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:true,position:'top',labels:{font:{size:9},boxWidth:12}},
+               tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+(ctx.parsed.y>0?'+':'')+ctx.parsed.y.toFixed(1)+'%'}}},
+      scales:{
+        x:{ticks:{font:{size:9},color:'#7F8C8D'},grid:{display:false}},
+        y:{ticks:{callback:v=>v+'%',font:{size:9},color:'#7F8C8D'},grid:{color:'#EEF0F3'}},
+      }
+    }
+  });
+}
+
+function buildSwTables(v){
+  const ytdBody=document.getElementById('ytdSwBody');
+  ytdBody.innerHTML=v.ytd_sw.slice(-20).map(sw=>
+    `<tr><td class="mn">${sw.date}</td>
+     <td><span class="badge b${sw.from_}">${sw.from_}</span><span class="arr">→</span><span class="badge b${sw.to}">${sw.to}</span>${sw.is_tie?'<span class="tie-tag">H2H</span>':''}</td>
+     <td><span class="tag">${sw.trigger}</span></td>
+     <td class="mn" style="text-align:center">${sw.days}</td></tr>`).join('');
+
+  const allBody=document.getElementById('allSwBody');
+  const sw=v.sw_log; const n=sw.length;
+  allBody.innerHTML=sw.map((s,i)=>
+    `<tr style="${s.date.includes('2025')||s.date.includes('2026')?'background:rgba(39,174,96,0.04)':''}">
+     <td class="mn" style="color:#7F8C8D;font-size:9px">${n-i}</td>
+     <td class="mn">${s.date}</td>
+     <td><span class="badge b${s.from_}">${s.from_}</span><span class="arr">→</span><span class="badge b${s.to}">${s.to}</span>${s.is_tie?'<span class="tie-tag">H2H</span>':''}</td>
+     <td><span class="tag">${s.trigger}</span></td>
+     <td class="mn" style="text-align:center">${s.days}</td></tr>`).join('');
+}
+
+// ── Ratio charts (shared, built once) ─────────────────────────────────────────
+(function(){
+  const keys=P.shared.pairs;  // all 6 pairs
+  const cols=['#2E86AB','#2E86AB','#2E86AB','#E67E22','#E67E22','#D4A84B'];
+  ['rc0','rc1','rc2','rc3','rc4','rc5'].forEach(function(id,i){
+    const k=keys[i], rc=P.shared.ratio_charts[k];
+    const r=unzip(rc.ratio),u=unzip(rc.up),l=unzip(rc.lo);
+    new Chart(document.getElementById(id),{
+      type:'line',
+      data:{labels:r.labels,datasets:[
+        {data:r.vals,borderColor:cols[i],borderWidth:1.8,pointRadius:0,tension:0.2,fill:false},
+        {data:u.vals,borderColor:'#27AE60',borderWidth:1.1,borderDash:[4,3],pointRadius:0,tension:0.2,fill:false},
+        {data:l.vals,borderColor:'#C0392B',borderWidth:1.1,borderDash:[4,3],pointRadius:0,tension:0.2,fill:false}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,animation:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y.toFixed(4)}}},
+        scales:{x:{ticks:{maxTicksLimit:8,maxRotation:0,font:{size:8},color:'#7F8C8D'},grid:{color:'#F0F4F8'}},
+                 y:{ticks:{callback:v=>v.toFixed(3),font:{size:8},color:'#7F8C8D'},grid:{color:'#EEF0F3'}}}
+      }
+    });
+  });
+})();
+
+// ── Initialise with base variant ──────────────────────────────────────────────
+setVariant('base');
+</script>
+</body></html>
