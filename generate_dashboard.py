@@ -202,10 +202,9 @@ with open('dashboard_template.html','r') as f:
 json_str = json.dumps(payload).replace('</script>', '<\\/script>')
 data_js = f"const P={json_str};"
 # Replace the data block
-import re
-new_html = re.sub(r'<script>const P=\{.*?\};</script>', lambda m: f'<script>{data_js}</script>', template, flags=re.DOTALL)
-                  f'<script>{data_js}</script>',
-                  template, flags=re.DOTALL)
+s = template.find('<script>const P=')
+e = template.find(';</script>', s) + len(';</script>')
+new_html = template[:s] + '<script>' + data_js + '</script>' + template[e:]
 
 # Update "Generated" timestamp in footer
 new_html = new_html.replace(
