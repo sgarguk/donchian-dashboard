@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 import yfinance as yf
-yf.set_tz_cache_location(None)  # disable SQLite cache — prevents locks in CI
+yf.set_tz_cache_location('/tmp')  # disable SQLite cache — prevents locks in CI
 
 warnings.filterwarnings('ignore')
 
