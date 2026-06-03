@@ -210,14 +210,13 @@ e = template.find(';</script>', s) + len(';</script>')
 new_html = template[:s] + '<script>' + data_js + '</script>' + template[e:]
 new_html = re.sub(r'As of <strong style="color:#fff">[^<]*</strong>', f'As of <strong style="color:#fff">{last_date}</strong>', new_html)
 # Update current prices in signal card
-        cp = payload['shared']['curr_prices']
-        for ticker, price in cp.items():
-            new_html = re.sub(
+cp = payload['shared']['curr_prices']
+for ticker, price in cp.items():
+          new_html = re.sub(
                 rf'(<div class="pt"[^>]*>{ticker}</div>\s*<div class="pv"[^>]*>\$)[0-9.]+',
                 rf'\g<1>{price:.2f}',
                 new_html
             )
-
 # Update "Generated" timestamp in footer
 new_html = new_html.replace(
     'Lighthouse Canton Pte. Ltd.',
