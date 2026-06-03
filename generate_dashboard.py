@@ -5,7 +5,7 @@ Runs in GitHub Actions. Outputs docs/index.html (Cloudflare Pages serves this).
 Usage: python generate_dashboard.py
 """
 
-import os, json, warnings
+import os, json, warnings, re
 from itertools import combinations
 from datetime import datetime, timezone
 
@@ -208,6 +208,7 @@ data_js = f"const P={json_str};"
 s = template.find('<script>const P=')
 e = template.find(';</script>', s) + len(';</script>')
 new_html = template[:s] + '<script>' + data_js + '</script>' + template[e:]
+new_html = re.sub(r'As of <strong style="color:#fff">[^<]*</strong>', f'As of <strong style="color:#fff">{last_date}</strong>', new_html)
 
 # Update "Generated" timestamp in footer
 new_html = new_html.replace(
