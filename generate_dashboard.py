@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 import yfinance as yf
+yf.set_tz_cache_location(None)  # disable SQLite cache — prevents locks in CI
 
 warnings.filterwarnings('ignore')
 
@@ -35,6 +36,8 @@ print(f"[{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}] Downloadin
 raw = yf.download(ALL, start=START, auto_adjust=False, progress=False)
 pr  = raw['Adj Close'][ALL].dropna()
 ret = pr.pct_change()
+if pr.empty:
+    raise ValueError("Download returned empty data — market may be closed or yfinance unavailable")
 last_date = pr.index[-1].strftime('%d %b %Y')
 print(f"  Data through: {last_date}  ({len(pr)} days)")
 
