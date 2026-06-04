@@ -2,7 +2,7 @@ name: Update Donchian Dashboard
 
 on:
   schedule:
-    - cron: '0 1 * * 2-6'   # 1am UTC = 9am SGT, Tue–Sat (covers Mon–Fri closes)
+    - cron: '0 22 * * 1-5'   # 1am UTC = 9am SGT, Tue–Sat (covers Mon–Fri closes)
   workflow_dispatch:          # allows manual trigger from GitHub UI
   push:
     branches: [ main ]        # also runs on any commit to main
