@@ -645,6 +645,51 @@ function buildEntryTimingSection() {
 }
 
 buildEntryTimingSection();
+function buildEntryTimingSection() {
+  const v = P.variants['base'];
+  const sw = v.sw_log;
+  function swDateToISO(s) { const d = new Date(s); return d.toISOString().slice(0,10); }
+  const periods = [];
+  for (let i = 0; i < sw.length; i++) {
+    if (sw[i].to === 'QQQ' && i + 1 < sw.length) {
+      periods.push({ startISO: swDateToISO(sw[i].date), endISO: swDateToISO(sw[i+1].date), duration: sw[i+1].days });
+    }
+  }
+  const allDurations = periods.map(p => p.duration);
+  const bucketDefs = [{key:'1–15',min:1,max:15},{key:'16–30',min:16,max:30},{key:'31–45',min:31,max:45},{key:'46–60',min:46,max:60},{key:'61+',min:61,max:9999}];
+  const buckets = {};
+  bucketDefs.forEach(b => buckets[b.key] = []);
+  periods.forEach(period => {
+    const inPeriod = v.full_equity.filter(([d]) => d >= period.startISO && d <= period.endISO);
+    if (inPeriod.length < 2) return;
+    const endEq = inPeriod[inPeriod.length - 1][1];
+    inPeriod.forEach(([d, eq], idx) => {
+      const entryDay = idx + 1;
+      const rem = (endEq / eq - 1) * 100;
+      const b = bucketDefs.find(b => entryDay >= b.min && entryDay <= b.max);
+      if (b) buckets[b.key].push(rem);
+    });
+  });
+  const stats = {};
+  bucketDefs.forEach(({key}) => {
+    const vals = [...buckets[key]].sort((a,b) => a-b);
+    if (vals.length) stats[key] = { avg: vals.reduce((a,b)=>a+b,0)/vals.length, median: vals[Math.floor(vals.length/2)], pctPos: vals.filter(x=>x>0).length/vals.length*100, count: vals.length };
+  });
+  const dIn = v.days_in;
+  const currBucket = dIn<=15?'1–15':dIn<=30?'16–30':dIn<=45?'31–45':dIn<=60?'46–60':'61+';
+  const dBins = [0,15,30,45,60,90,120,200];
+  const dLabels = ['1-15','16-30','31-45','46-60','61-90','91-120','120+'];
+  const dCounts = Array(dBins.length-1).fill(0);
+  allDurations.forEach(d => { for(let i=0;i<dBins.length-1;i++){if(d>=dBins[i]&&d<dBins[i+1]){dCounts[i]++;break;}} });
+  const medianDur = [...allDurations].sort((a,b)=>a-b)[Math.floor(allDurations.length/2)];
+  new Chart(document.getElementById('durationChart'),{type:'bar',data:{labels:dLabels,datasets:[{data:dCounts,backgroundColor:dCounts.map((_,i)=>(dIn>=dBins[i]&&dIn<dBins[i+1])?'#2E86AB':'rgba(46,134,171,0.3)'),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:8},color:'#7F8C8D'},grid:{display:false}},y:{ticks:{font:{size:8},color:'#7F8C8D'},grid:{color:'#EEF0F3'},title:{display:true,text:'# Periods',font:{size:8},color:'#7F8C8D'}}}}});
+  const bKeys = bucketDefs.map(b=>b.key);
+  new Chart(document.getElementById('entryReturnChart'),{type:'bar',data:{labels:bKeys,datasets:[{data:bKeys.map(k=>stats[k]?+stats[k].avg.toFixed(1):null),backgroundColor:bKeys.map(k=>k===currBucket?'#27AE60':'rgba(39,174,96,0.35)'),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>(c.parsed.y>0?'+':'')+c.parsed.y+'%'}}},scales:{x:{ticks:{font:{size:8},color:'#7F8C8D'},grid:{display:false}},y:{ticks:{callback:v=>v+'%',font:{size:8},color:'#7F8C8D'},grid:{color:'#EEF0F3'}}}}});
+  document.getElementById('entryBucketTable').innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:var(--nv2);color:#94a3b8"><th style="padding:5px 7px;text-align:left;font-size:9px">Entry Day</th><th style="padding:5px 7px;text-align:right;font-size:9px">Avg Rem.</th><th style="padding:5px 7px;text-align:right;font-size:9px">% +ve</th><th style="padding:5px 7px;text-align:right;font-size:9px">n</th></tr></thead><tbody>${bKeys.map(k=>{const s=stats[k];if(!s)return'';const cur=k===currBucket;return`<tr style="${cur?'background:rgba(46,134,171,0.1);':''}border-bottom:1px solid var(--bd)"><td style="padding:5px 7px;font-weight:${cur?700:400}">${k}${cur?' ◀':''}</td><td style="padding:5px 7px;text-align:right;color:${s.avg>=0?'#27AE60':'#C0392B'}">${s.avg>=0?'+':''}${s.avg.toFixed(1)}%</td><td style="padding:5px 7px;text-align:right">${s.pctPos.toFixed(0)}%</td><td style="padding:5px 7px;text-align:right;color:#7F8C8D">${s.count}</td></tr>`;}).join('')}</tbody></table>`;
+  const cs = stats[currBucket];
+  document.getElementById('entryTimingContext').innerHTML=`<strong>Current position:</strong> Day <strong style="color:#2E86AB">${dIn}</strong> of QQQ signal (bucket: <strong>${currBucket}</strong>). `+(cs?`Historically, entries in this bucket averaged <strong style="color:${cs.avg>=0?'#27AE60':'#C0392B'}">${cs.avg>=0?'+':''}${cs.avg.toFixed(1)}%</strong> remaining signal return, with <strong>${cs.pctPos.toFixed(0)}%</strong> of periods ending positive. `:'')+`Median QQQ signal duration: <strong>${medianDur} days</strong> — `+(dIn<medianDur?`you are <strong style="color:#27AE60">${medianDur-dIn} days below</strong> median, signal may have room to run.`:`you are <strong style="color:#E67E22">${dIn-medianDur} days above</strong> median, signal is extended vs history.`);
+}
+buildEntryTimingSection();
 setVariant('base');
 </script>
 </body></html>
