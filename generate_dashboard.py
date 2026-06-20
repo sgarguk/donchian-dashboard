@@ -158,9 +158,9 @@ for vkey,vcfg in VARIANTS.items():
         'n_switches':nsw,'curr_active':active.iloc[-1],'signal_hold':hold.iloc[-1],
         'days_in':int(days_in),'last_sw_date':last_sw.strftime('%d %b %Y'),'prev_hold':prev_hold,
         'ytd_equity':ts((1+strat.loc['2025-01-01':]).cumprod()*100),
-          'full_equity':ts((1+strat.loc[valid:]).cumprod()*100), 
+        'full_equity':ts((1+strat.loc[valid:]).cumprod()*100), 
         'ytd_blocks':regime_blocks(active.loc['2025-01-01':]),
-        'sw_log':sw_log[-30:],'ytd_sw':[s for s in sw_log if '2025' in s['date'] or '2026' in s['date']],
+        'sw_log':sw_log,'ytd_sw':[s for s in sw_log if '2025' in s['date'] or '2026' in s['date']],
         'annual':{str(yr):round(((1+strat[strat.index.year==yr]).prod()-1)*100,1)
                   for yr in sorted(strat.index.year.unique())},
     }
