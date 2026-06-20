@@ -240,6 +240,30 @@ canvas{max-width:100%;}
 </div>
 </div>
 
+<!-- ENTRY TIMING ANALYSIS -->
+<div class="card" style="margin-bottom:13px">
+  <div class="ch">
+    <span>Entry Timing Analysis · QQQ Signal Periods</span>
+    <span>Does entering late into a signal hurt long-term returns?</span>
+  </div>
+  <div class="cb">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-bottom:10px">
+      <div>
+        <div style="font-size:9px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Signal Duration Distribution</div>
+        <div style="height:160px;position:relative"><canvas id="durationChart"></canvas></div>
+      </div>
+      <div>
+        <div style="font-size:9px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Avg Remaining Return by Entry Day</div>
+        <div style="height:160px;position:relative"><canvas id="entryReturnChart"></canvas></div>
+      </div>
+      <div>
+        <div style="font-size:9px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Entry Bucket Summary</div>
+        <div id="entryBucketTable"></div>
+      </div>
+    </div>
+    <div id="entryTimingContext" style="padding:8px 10px;background:var(--bg);border-radius:4px;font-size:10px;color:#475569;border-left:3px solid #2E86AB"></div>
+  </div>
+</div>
 <div class="footer">Lighthouse Canton Pte. Ltd. · Internal Research Only · Not for Client Distribution · N=30 · 2-day confirm · next-day close (shift=2) · H2H tiebreaker · 3bp one-way cost · Leveraged ETFs amplify gains and losses</div>
 
 <script>
