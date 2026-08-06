@@ -241,6 +241,39 @@ sr_start = new_html.find('<div class="sr">')
 sr_end = new_html.find('<div id="signalLogic"')
 if sr_start != -1 and sr_end != -1:
     new_html = new_html[:sr_start] + pair_rows_html + new_html[sr_end:]
+# Rebuild vote tally boxes with live data
+winner_asset = max(votes, key=votes.get)
+asset_rgb = {'SPY':'46,134,171','QQQ':'46,134,171','GLD':'212,168,75','DBMF':'39,174,96'}
+asset_hex = {'SPY':'#2E86AB','QQQ':'#2E86AB','GLD':'#D4A84B','DBMF':'#27AE60'}
+stars = {0:'·',1:'★',2:'★★',3:'★★★'}
+vote_boxes = ''
+for asset in ['SPY','QQQ','GLD','DBMF']:
+    v = votes[asset]
+    is_winner = (asset == winner_asset)
+    bg = f'rgba({asset_rgb[asset]},0.12)' if is_winner else '#F7F9FC'
+    border = asset_hex[asset] if is_winner else '#DDE3EA'
+    col = asset_hex[asset] if is_winner else '#94a3b8'
+    vote_boxes += (
+        f'<div style="flex:1;text-align:center;padding:6px 4px;border-radius:4px;background:{bg};border:1.5px solid {border};">'
+        f'<div style="font-size:8px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px">{asset}</div>'
+        f'<div style="font-size:20px;font-weight:700;font-family:Courier New,monospace;color:{col}">{v}</div>'
+        f'<div style="font-size:9px;color:{col};margin-top:1px">{stars.get(v,"·")}</div>'
+        f'</div>'
+    )
+vote_flex = f'<div style="display:flex;gap:6px">{vote_boxes}</div>'
+vt_s = new_html.find('<div style="display:flex;gap:6px"><div style="flex:1;text-align:center;padding:6px 4px;border-radius:4px;background:#F7F9FC;border:1.5px solid #DDE3EA;">')
+vt_e = new_html.find('</div><div style="margin-top:7px;font-size:9px', vt_s)
+if vt_s != -1 and vt_e != -1:
+    new_html = new_html[:vt_s] + vote_flex + new_html[vt_e:]
+
+# Update winner line
+winner_votes = votes[winner_asset]
+winner_color = asset_hex[winner_asset]
+new_html = re.sub(
+    r'Winner: <strong style="color:[^"]*">[^<]*</strong>',
+    f'Winner: <strong style="color:{winner_color}">{winner_asset} ({winner_votes} votes)</strong>',
+    new_html
+)
 # Update current prices in signal card
 cp = payload['shared']['curr_prices']
 for ticker, price in cp.items():
