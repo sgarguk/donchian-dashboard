@@ -34,7 +34,7 @@ OUT   = os.path.join('docs', 'index.html')
 # ── Data ──────────────────────────────────────────────────────────────────────
 print(f"[{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}] Downloading data...")
 raw = yf.download(ALL, start=START, auto_adjust=False, progress=False)
-pr  = raw['Adj Close'][ALL].dropna()
+pr  = raw['Close'][ALL].dropna()
 ret = pr.pct_change()
 if pr.empty:
     raise ValueError("Download returned empty data — market may be closed or yfinance unavailable")
