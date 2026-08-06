@@ -209,6 +209,38 @@ s = template.find('<script>const P=')
 e = template.find(';</script>', s) + len(';</script>')
 new_html = template[:s] + '<script>' + data_js + '</script>' + template[e:]
 new_html = re.sub(r'As of <strong style="color:#fff">[^<]*</strong>', f'As of <strong style="color:#fff">{last_date}</strong>', new_html)
+# Rebuild pairwise signal table rows with live data
+pair_colors = {'SPY':'#2E86AB','QQQ':'#2E86AB','GLD':'#D4A84B','DBMF':'#27AE60'}
+pair_rows_html = ''
+for k in sdf.columns:
+    a, b = k.split('/')
+    cr = curr_ratios[k]
+    pct_display = f"{int(cr['pct'])}% of range"
+    if cr['above']:
+        status_cls, status_txt = 'status-above', '▲ ABOVE'
+    elif cr['below']:
+        status_cls, status_txt = 'status-below', '▼ BELOW'
+    else:
+        status_cls, status_txt = 'status-within', 'IN BAND'
+    dir_txt = '▲ last up' if cr['sig'] == 1 else '▼ last down'
+    vote_asset = a if cr['sig'] == 1 else b
+    vote_color = pair_colors.get(vote_asset, '#2E86AB')
+    pair_rows_html += (
+        f'<div class="sr">'
+        f'<div class="sl">{k}</div>'
+        f'<div class="sv">{cr["val"]}<br><span class="sm">{pct_display}</span></div>'
+        f'<div class="sb"><span class="bv g">{cr["up"]}</span><span class="bl">upper</span></div>'
+        f'<div class="sb"><span class="bv r">{cr["lo"]}</span><span class="bl">lower</span></div>'
+        f'<div class="ss {status_cls}">{status_txt}<br>'
+        f'<span style="font-size:7px;opacity:0.85">{dir_txt}</span></div>'
+        f'<div class="sv" style="font-weight:700;color:{vote_color}">+1 {vote_asset}<br>'
+        f'<span class="sm" style="color:{vote_color}">vote</span></div>'
+        f'</div>'
+    )
+sr_start = new_html.find('<div class="sr">')
+sr_end = new_html.find('<div id="signalLogic"')
+if sr_start != -1 and sr_end != -1:
+    new_html = new_html[:sr_start] + pair_rows_html + new_html[sr_end:]
 # Update current prices in signal card
 cp = payload['shared']['curr_prices']
 for ticker, price in cp.items():
