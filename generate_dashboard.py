@@ -314,12 +314,12 @@ for _i in range(len(rs)-1, -1, -1):
         break
 if _raw_winner == _curr_hold:
     _state = 'stable'; _action_date = None
-elif _consec >= CONFIRM:
-    _state = 'confirmed'; _action_date = _next_bdays(pr.index[-1], SHIFT)[-1]
+_confirm_date = _next_bdays(_trigger_date, CONFIRM - 1)[-1]
+_action_date  = _next_bdays(_confirm_date, SHIFT)[-1]
+if _consec >= CONFIRM:
+    _state = 'confirmed'
 else:
-    _state = 'pending'; _days_needed = CONFIRM - _consec
-    _confirm_date = _next_bdays(pr.index[-1], _days_needed)[-1]
-    _action_date = _next_bdays(_confirm_date, SHIFT)[-1]
+    _state = 'pending'
 _acolor = {'SPY':'#2E86AB','QQQ':'#2E86AB','GLD':'#D4A84B','DBMF':'#27AE60'}
 _cc = _acolor.get(_curr_hold,'#2E86AB'); _wc = _acolor.get(_raw_winner,'#2E86AB')
 if _state == 'stable':
