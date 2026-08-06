@@ -343,11 +343,14 @@ else:
            f'<div style="background:#fff;border-radius:4px;padding:7px 9px;border:1px solid {_wc}88"><div style="font-size:8px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Entering ({_raw_votes}v)</div><div style="font-size:16px;font-weight:700;font-family:Courier New,monospace;color:{_wc}">{_raw_winner}</div></div>'
            f'</div><div style="font-size:10px;color:#475569">Confirmed: <strong>{_trigger_date.strftime("%d %b %Y")}</strong> &nbsp;·&nbsp; Consecutive days: <strong>{_consec}</strong> &nbsp;·&nbsp; Action date: <strong style="color:#27AE60">{_action_date.strftime("%d %b %Y")}</strong> &nbsp;·&nbsp; Execute at close</div>')
 _pipeline_card = (f'<div class="card" style="margin-top:13px;border-top:3px solid {_cb};background:{_cbg}"><div class="ch" style="background:var(--nv2)"><span>Signal Pipeline</span><span>C={CONFIRM} days · Shift={SHIFT} days · NYSE calendar</span></div><div class="cb" style="padding:12px 13px">{_sh}</div></div>')
+_sig_start = new_html.find('<div class="card sig-card"')
 _sig_end = new_html.find('id="leverageNote"')
 _sig_end = new_html.find('</div>', _sig_end)
 _sig_end = new_html.find('</div>', _sig_end + 1)
 _sig_end = new_html.find('</div>', _sig_end + 1) + len('</div>')
-new_html = new_html[:_sig_end] + _pipeline_card + new_html[_sig_end:]
+_sig_block = new_html[_sig_start:_sig_end]
+_wrapped = '<div style="display:flex;flex-direction:column;gap:13px">' + _sig_block + _pipeline_card + '</div>'
+new_html = new_html[:_sig_start] + _wrapped + new_html[_sig_end:]
 os.makedirs('docs', exist_ok=True)
 with open(OUT, 'w') as f:
     f.write(new_html)
