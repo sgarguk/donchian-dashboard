@@ -288,6 +288,66 @@ new_html = new_html.replace(
     f'Lighthouse Canton Pte. Ltd. · Updated {shared["generated_utc"]}'
 )
 
+# ── Signal Pipeline Card ──────────────────────────────────────────────────────
+from pandas.tseries.holiday import USFederalHolidayCalendar
+from pandas.tseries.offsets import CustomBusinessDay
+_cal = USFederalHolidayCalendar()
+_good_fridays = pd.to_datetime(['2019-04-19','2020-04-10','2021-04-02','2022-04-15','2023-04-07','2024-03-29','2025-04-18','2026-04-03','2027-03-26'])
+_base_holidays = _cal.holidays(start='2019-01-01', end='2030-01-01')
+_all_holidays  = _base_holidays.union(_good_fridays)
+NYSE_day = CustomBusinessDay(holidays=_all_holidays)
+def _next_bdays(from_date, n):
+    days = []; d = pd.Timestamp(from_date)
+    for _ in range(n): d += NYSE_day; days.append(d)
+    return days
+_curr_hold  = variant_data['base']['curr_active']
+_raw_winner = max(votes, key=votes.get)
+_raw_votes  = votes[_raw_winner]
+_consec = 0
+for _i in range(len(rs)-1, -1, -1):
+    if rs.iloc[_i] == _raw_winner: _consec += 1
+    else: break
+_trigger_date = pr.index[-1]
+for _i in range(len(rs)-1, -1, -1):
+    if rs.iloc[_i] != _raw_winner:
+        _trigger_date = rs.index[_i+1] if _i+1 < len(rs) else pr.index[-1]
+        break
+if _raw_winner == _curr_hold:
+    _state = 'stable'; _action_date = None
+elif _consec >= CONFIRM:
+    _state = 'confirmed'; _action_date = _next_bdays(pr.index[-1], SHIFT)[-1]
+else:
+    _state = 'pending'; _days_needed = CONFIRM - _consec
+    _confirm_date = _next_bdays(pr.index[-1], _days_needed)[-1]
+    _action_date = _next_bdays(_confirm_date, SHIFT)[-1]
+_acolor = {'SPY':'#2E86AB','QQQ':'#2E86AB','GLD':'#D4A84B','DBMF':'#27AE60'}
+_cc = _acolor.get(_curr_hold,'#2E86AB'); _wc = _acolor.get(_raw_winner,'#2E86AB')
+if _state == 'stable':
+    _cb = '#DDE3EA'; _cbg = '#F7F9FC'
+    _sh = (f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:16px">✓</span><span style="font-size:11px;font-weight:700;color:#475569">Signal Stable · No Change Pending</span></div>'
+           f'<div style="font-size:10px;color:#7F8C8D">Current hold <strong style="color:{_cc}">{_curr_hold}</strong> leads with <strong>{votes[_curr_hold]}</strong> votes · holding position</div>')
+elif _state == 'pending':
+    _cb = '#E67E22'; _cbg = '#FEFBF6'; _pct = int(_consec/CONFIRM*100)
+    _sh = (f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:14px">⏳</span><span style="font-size:11px;font-weight:700;color:#E67E22">Pending Confirmation</span></div>'
+           f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
+           f'<div style="background:#fff;border-radius:4px;padding:7px 9px;border:1px solid #DDE3EA"><div style="font-size:8px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Current Hold</div><div style="font-size:16px;font-weight:700;font-family:Courier New,monospace;color:{_cc}">{_curr_hold}</div></div>'
+           f'<div style="background:#fff;border-radius:4px;padding:7px 9px;border:1px solid {_wc}44"><div style="font-size:8px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Challenger ({_raw_votes}v)</div><div style="font-size:16px;font-weight:700;font-family:Courier New,monospace;color:{_wc}">{_raw_winner}</div></div>'
+           f'</div><div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:9px;color:#7F8C8D;margin-bottom:3px"><span>Confirmation</span><span>{_consec} of {CONFIRM} days</span></div>'
+           f'<div style="background:#EEF0F3;border-radius:3px;height:6px;overflow:hidden"><div style="width:{_pct}%;background:#E67E22;height:100%;border-radius:3px"></div></div></div>'
+           f'<div style="font-size:10px;color:#7F8C8D">Trigger: <strong>{_trigger_date.strftime("%d %b %Y")}</strong> &nbsp;·&nbsp; Est. action: <strong style="color:#E67E22">{_action_date.strftime("%d %b %Y")}</strong> &nbsp;(if confirmed)</div>')
+else:
+    _cb = '#27AE60'; _cbg = '#F4FCF7'
+    _sh = (f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:14px">⚡</span><span style="font-size:11px;font-weight:700;color:#27AE60">Change Confirmed · Awaiting Execution</span></div>'
+           f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
+           f'<div style="background:#fff;border-radius:4px;padding:7px 9px;border:1px solid #DDE3EA"><div style="font-size:8px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Exiting</div><div style="font-size:16px;font-weight:700;font-family:Courier New,monospace;color:{_cc}">{_curr_hold}</div></div>'
+           f'<div style="background:#fff;border-radius:4px;padding:7px 9px;border:1px solid {_wc}88"><div style="font-size:8px;color:#7F8C8D;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px">Entering ({_raw_votes}v)</div><div style="font-size:16px;font-weight:700;font-family:Courier New,monospace;color:{_wc}">{_raw_winner}</div></div>'
+           f'</div><div style="font-size:10px;color:#475569">Confirmed: <strong>{_trigger_date.strftime("%d %b %Y")}</strong> &nbsp;·&nbsp; Consecutive days: <strong>{_consec}</strong> &nbsp;·&nbsp; Action date: <strong style="color:#27AE60">{_action_date.strftime("%d %b %Y")}</strong> &nbsp;·&nbsp; Execute at close</div>')
+_pipeline_card = (f'<div class="card" style="margin-top:13px;border-top:3px solid {_cb};background:{_cbg}"><div class="ch" style="background:var(--nv2)"><span>Signal Pipeline</span><span>C={CONFIRM} days · Shift={SHIFT} days · NYSE calendar</span></div><div class="cb" style="padding:12px 13px">{_sh}</div></div>')
+_sig_end = new_html.find('id="leverageNote"')
+_sig_end = new_html.find('</div>', _sig_end)
+_sig_end = new_html.find('</div>', _sig_end + 1)
+_sig_end = new_html.find('</div>', _sig_end + 1) + len('</div>')
+new_html = new_html[:_sig_end] + _pipeline_card + new_html[_sig_end:]
 os.makedirs('docs', exist_ok=True)
 with open(OUT, 'w') as f:
     f.write(new_html)
